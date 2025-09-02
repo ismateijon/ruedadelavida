@@ -293,7 +293,7 @@
       const deg = angle*180/Math.PI; if(deg>90 && deg<270){ ctx.rotate(Math.PI); }
       ctx.textAlign='center'; ctx.textBaseline='middle';
       const words = String(text||'').split(/\s+/); let line=''; const lines=[];
-      for(let n=0;n<words.length;n++){
+      for(let n=0;n<words.length;n++){ 
         const test = line? line+' '+words[n] : words[n];
         const w = ctx.measureText(test).width;
         if(w>maxWidth && n>0){ lines.push(line); line = words[n]; } else { line = test; }
