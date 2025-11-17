@@ -263,7 +263,7 @@
         ctx.beginPath(); ctx.arc(tx,ty,6*dpi,0,Math.PI*2); ctx.lineWidth=2*dpi; ctx.strokeStyle=color; ctx.stroke();
       }
 
-      // etiquetas (si están a la izquierda, gira 180º para que no queden boca abajo)
+      // etiquetas SIEMPRE horizontales
       for(let i=0;i<8;i++){
         const aStart = -Math.PI/2 + i*angleStep;
         const mid = aStart + angleStep/2;
@@ -271,7 +271,7 @@
         const lx = Math.cos(mid)*labelR; const ly = Math.sin(mid)*labelR;
         const label = areas[i] || `Área ${i+1}`;
         ctx.fillStyle='#111827'; ctx.font = `${14*dpi}px ui-sans-serif,system-ui`;
-        drawWrappedText(ctx,label,lx,ly,120*dpi,16*dpi,mid);
+        drawWrappedText(ctx,label,lx,ly,120*dpi,16*dpi);
       }
 
       // leyenda objetivo
@@ -288,9 +288,8 @@
       const v = parseInt(h.length===3 ? h.split('').map(c=>c+c).join('') : h,16);
       const r=(v>>16)&255, g=(v>>8)&255, b=v&255; return `rgba(${r},${g},${b},${alpha})`;
     }
-    function drawWrappedText(ctx,text,x,y,maxWidth,lineHeight,angle){
+    function drawWrappedText(ctx,text,x,y,maxWidth,lineHeight){
       ctx.save(); ctx.translate(x,y);
-      const deg = angle*180/Math.PI; if(deg>90 && deg<270){ ctx.rotate(Math.PI); }
       ctx.textAlign='center'; ctx.textBaseline='middle';
       const words = String(text||'').split(/\s+/); let line=''; const lines=[];
       for(let n=0;n<words.length;n++){
