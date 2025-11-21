@@ -3,67 +3,130 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Rueda de la Vida – Generador</title>
+  <title>Rueda de la Vida | Isma Teijón</title>
+  <!-- FAVICON -->
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+
   <style>
     :root{
-      --bg:#f7f7fb; --card:#ffffff; --ink:#111827; --muted:#6b7280; --line:#e5e7eb; --brand:#4f46e5;
+      --bg:#f7f7fb; --card:#ffffff; --ink:#111827; --muted:#6b7280; --line:#e5e7eb; --brand:#4f46e5; --brand-dark:#3730a3;
+      --chat-bg:#fff; --chat-bubble-user:#4f46e5; --chat-bubble-bot:#f3f4f6;
     }
     *{box-sizing:border-box}
-    body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial; background:var(--bg); color:var(--ink)}
+    body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial; background:var(--bg); color:var(--ink); padding-bottom: 100px;}
+    a{color:var(--brand); text-decoration:none} a:hover{text-decoration:underline}
+    
     .wrap{max-width:1100px;margin:0 auto;padding:24px}
-    h1{margin:0 0 6px; font-size:28px}
-    h2{margin:0 0 12px; font-size:18px}
+    h1{margin:0 0 10px; font-size:28px; color:var(--brand-dark)}
+    h2{margin:0 0 12px; font-size:18px; border-bottom:1px solid var(--line); padding-bottom:8px}
+    p{line-height:1.6; margin-bottom:12px}
+    
     .row{display:flex; gap:12px; flex-wrap:wrap; align-items:center}
-    .card{background:var(--card); border-radius:16px; padding:16px; box-shadow:0 6px 20px rgba(0,0,0,.06)}
-    .btn{background:var(--brand); color:#fff; padding:10px 14px; border:0; border-radius:12px; cursor:pointer}
+    .card{background:var(--card); border-radius:16px; padding:20px; box-shadow:0 4px 20px rgba(0,0,0,.05); margin-bottom:20px}
+    
+    .btn{background:var(--brand); color:#fff; padding:10px 16px; border:0; border-radius:10px; cursor:pointer; transition:0.2s; font-weight:500}
+    .btn:hover{background:var(--brand-dark)}
     .btn:disabled{opacity:.5; cursor:not-allowed}
     .btn.ghost{background:transparent; color:var(--ink); border:1px solid var(--line)}
-    .btn.sm{padding:6px 10px; font-size:12px; border-radius:10px}
-    .grid{display:grid; gap:12px}
+    .btn.ghost:hover{background:#f9fafb; border-color:var(--brand)}
+    .btn.sm{padding:6px 12px; font-size:13px; border-radius:8px}
+    .btn.xs{padding:4px 8px; font-size:11px; border-radius:6px}
+    
+    .grid{display:grid; gap:20px}
     .grid.cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}
     .grid.cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}
     @media (max-width: 900px){ .grid.cols-4{grid-template-columns:repeat(2,minmax(0,1fr))} }
-    @media (max-width: 560px){ .grid.cols-2,.grid.cols-4{grid-template-columns:repeat(1,minmax(0,1fr))} }
-    input[type="text"], select{width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:10px}
-    input[type="range"]{width:100%}
-    .tiny{font-size:12px; color:var(--muted)}
-    .badge{display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border-radius:999px; border:1px solid var(--line); background:#fff; cursor:pointer}
-    .dot{display:inline-block; width:10px; height:10px; border-radius:999px}
-    canvas{max-width:100%; height:auto; border:1px solid var(--line); border-radius:12px}
-    .num{font-variant-numeric:tabular-nums}
+    @media (max-width: 600px){ .grid.cols-2, .grid.cols-4{grid-template-columns:1fr} }
+
+    input[type="text"], select, input[type="password"]{width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; font-size:14px}
+    input[type="range"]{width:100%; cursor:pointer}
+    
+    .tiny{font-size:13px; color:var(--muted)}
+    .num{font-variant-numeric:tabular-nums; font-weight:bold; color:var(--brand); font-size:16px}
+    
+    canvas{max-width:100%; height:auto; border:1px solid var(--line); border-radius:12px; margin:0 auto; display:block}
+
+    /* Align Helper */
+    .spacer-block { height: 42px; display: flex; align-items: center; } 
+
+    /* --- CHAT UI --- */
+    #chat-toggle {
+        position: fixed; bottom: 30px; right: 30px;
+        width: 64px; height: 64px; border-radius: 50%;
+        background: var(--brand); color: white;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 32px; box-shadow: 0 8px 24px rgba(79, 70, 229, 0.4);
+        cursor: pointer; z-index: 1000; transition: transform 0.2s;
+    }
+    #chat-toggle:hover { transform: scale(1.05); }
+    
+    .chat-window {
+        position: fixed; bottom: 100px; right: 30px;
+        width: 380px; max-width: calc(100% - 40px); height: 600px; max-height: 70vh;
+        background: var(--chat-bg); border-radius: 16px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        display: flex; flex-direction: column;
+        overflow: hidden; z-index: 1000;
+        transform: translateY(20px); opacity: 0; pointer-events: none;
+        transition: all 0.3s ease; border:1px solid var(--line);
+    }
+    .chat-window.open { transform: translateY(0); opacity: 1; pointer-events: all; }
+    
+    .chat-header {
+        background: var(--brand); color: white; padding: 16px;
+        display: flex; justify-content: space-between; align-items: center;
+        font-weight: bold;
+    }
+    .chat-body {
+        flex: 1; padding: 16px; overflow-y: auto;
+        display: flex; flex-direction: column; gap: 12px;
+        scroll-behavior: smooth; background: #fefefe;
+    }
+    .chat-msg {
+        max-width: 90%; padding: 12px 16px; border-radius: 14px;
+        font-size: 14px; line-height: 1.5; word-wrap: break-word;
+    }
+    .chat-msg.bot { background: var(--chat-bubble-bot); color: var(--ink); align-self: flex-start; border-bottom-left-radius: 2px; }
+    .chat-msg.user { background: var(--chat-bubble-user); color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
+    .chat-msg.sys { background: #fff3cd; color: #856404; border:1px solid #ffeeba; align-self: center; font-size:12px; width:100%; text-align:center; }
+    .chat-msg.err { background: #fee2e2; color: #991b1b; align-self: center; font-size:11px; width:100%; max-height:100px; overflow-y:auto; border:1px solid #fca5a5; }
+
+    .chat-input-area {
+        border-top: 1px solid var(--line); padding: 16px;
+        display: flex; gap: 8px; flex-direction: column; background: #fff;
+    }
+    
+    .typing { display:flex; gap:4px; padding:12px 16px; background:var(--chat-bubble-bot); width:fit-content; border-radius:14px; }
+    .typing span { width:6px; height:6px; background:#9ca3af; border-radius:50%; animation: bounce 1.4s infinite ease-in-out both; }
+    .typing span:nth-child(1){animation-delay:-0.32s} .typing span:nth-child(2){animation-delay:-0.16s}
+    @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+    
+    .slider-box { margin-bottom: 5px; }
+    .slider-header { display:flex; justify-content:space-between; margin-bottom:4px; font-size:13px; font-weight:600; }
+
   </style>
 </head>
 <body>
   <div class="wrap">
-    <header class="row">
-      <div style="flex:1 1 auto; min-width:260px">
+    <!-- HEADER -->
+    <header style="margin-bottom:20px">
         <h1>Rueda de la Vida</h1>
-        <p class="tiny">
-          Una foto honesta de tu presente para diseñar un futuro con intención.
-          La rueda representa 8 áreas claves. Puntuarlas no es juzgarte, es orientarte:
-          ver dónde estás para elegir a dónde vas.
+        <p class="tiny" style="font-size:14px; color:#374151">
+          Una foto honesta de tu presente para diseñar un futuro con intención. La rueda representa 8 áreas claves. Puntuarlas no es juzgarte, es orientarte: ver dónde estás para elegir a dónde vas.
         </p>
-        <p class="tiny">
-          <strong>Cómo rellenarla:</strong> elige 8 áreas importantes, valora <em>cómo estás ahora mismo</em>
-          del <strong>0 (desastre)</strong> al <strong>10 (perfecta)</strong>, fija objetivos a 1/3/6/12 meses (el <strong>●</strong>
-          marca el objetivo en cada radio) y descarga tu imagen.
+        <p class="tiny" style="font-size:14px; color:#374151">
+          <strong>Cómo rellenarla:</strong> elige 8 áreas importantes, valora cómo estás ahora mismo del <strong>0 (desastre)</strong> al <strong>10 (perfecta)</strong>, fija objetivos a 1/3/6/12 meses (el ● marca el objetivo en cada radio) y descarga tu imagen.
         </p>
-      </div>
-      <div class="row" style="flex:0 0 auto">
-        <label class="tiny">Tamaño de la imagen</label>
-        <select id="sizeSelect">
-          <option value="0.9">Pequeño</option>
-          <option value="1.2" selected>Mediano</option>
-          <option value="1.6">Grande</option>
-        </select>
-        <button class="btn" id="downloadBtn">Descargar PNG</button>
-      </div>
+        <p class="tiny" style="font-size:14px; color:#374151; background:#eef2ff; padding:10px; border-radius:8px; display:inline-block">
+          Pulsa el botón de abajo a la derecha 🤖 para hablar con la IA para consultar dudas de cómo rellenar, recibir un informe sobre tus resultado o un plan de acción.
+        </p>
     </header>
 
-    <section class="card" style="margin-top:16px">
-      <h2>1) Elige las 8 áreas</h2>
-      <div class="row" style="margin-bottom:10px">
-        <span class="tiny">Presets rápidos:</span>
+    <!-- PASO 1: DEFINIR ÁREAS -->
+    <section class="card">
+      <h2>1) Define tus 8 Áreas</h2>
+      <div class="row" style="margin-bottom:15px">
+        <span class="tiny">Plantillas rápidas:</span>
         <button class="btn ghost sm" data-preset="clasica">Clásica</button>
         <button class="btn ghost sm" data-preset="emprendedor">Emprendedor</button>
         <button class="btn ghost sm" data-preset="bienestar">Bienestar</button>
@@ -71,272 +134,361 @@
       <div class="grid cols-4" id="areasGrid"></div>
     </section>
 
-    <section class="card" style="margin-top:16px">
-      <h2>2) Valora cada área (0–10)</h2>
-      <div class="row" style="margin-bottom:10px">
-        <button class="btn ghost sm" id="all0">Poner todo a 0</button>
-        <button class="btn ghost sm" id="all5">Poner todo a 5</button>
-        <button class="btn ghost sm" id="all10">Poner todo a 10</button>
-      </div>
-      <div class="grid cols-4" id="scoresGrid"></div>
-    </section>
+    <!-- GRID PRINCIPAL: PASO 2 Y 3 -->
+    <div class="grid cols-2" style="align-items:start">
+      
+      <!-- PASO 2: ESTADO ACTUAL -->
+      <section class="card">
+        <h2>2) Estado Actual (0-10)</h2>
+        <p class="tiny" style="margin-bottom:10px">Valora de 0-10 cómo estás en estas áreas. Si tienes alguna duda, puedes hablar con la IA 🤖</p>
+        
+        <div class="spacer-block">
+            <div class="row" style="gap:5px">
+                <button class="btn ghost xs" onclick="setAllScores(0)">Todo 0</button>
+                <button class="btn ghost xs" onclick="setAllScores(5)">Todo 5</button>
+                <button class="btn ghost xs" onclick="setAllScores(10)">Todo 10</button>
+            </div>
+        </div>
 
-    <section class="card" style="margin-top:16px">
-      <h2>5) Horizonte y objetivos</h2>
-      <div class="row" style="margin-bottom:10px">
-        <label class="tiny">Horizonte</label>
-        <select id="horizon">
-          <option value="1">1 mes</option>
-          <option value="3" selected>3 meses</option>
-          <option value="6">6 meses</option>
-          <option value="12">12 meses</option>
-        </select>
-        <button class="btn ghost sm" id="targets10">Objetivo 10 en todas</button>
-        <button class="btn ghost sm" id="targets7">Objetivo 7 en todas</button>
-      </div>
-      <div class="grid cols-4" id="targetsGrid"></div>
-      <p class="tiny" style="margin-top:6px">En la rueda, el objetivo se muestra como un punto ● en el radio de cada área.</p>
-    </section>
+        <div class="grid cols-2" id="scoresGrid"></div>
+      </section>
 
-    <section class="card" style="margin-top:16px">
-      <h2>3) Vista previa de la rueda</h2>
+      <!-- PASO 3: OBJETIVOS -->
+      <section class="card">
+        <h2>3) Objetivos Futuros</h2>
+        <p class="tiny" style="margin-bottom:10px">Define tus objetivos en un plazo concreto. Se indicarán con ● en la imagen.</p>
+        
+        <div class="spacer-block" style="justify-content: space-between;">
+             <select id="horizon" style="max-width:150px">
+                <option value="1 mes">1 mes</option>
+                <option value="3 meses" selected>3 meses</option>
+                <option value="6 meses">6 meses</option>
+                <option value="1 año">1 año</option>
+              </select>
+              <div class="row" style="gap:5px">
+                <button class="btn ghost xs" onclick="setTargetsRelative(1)">Actual +1</button>
+                <button class="btn ghost xs" onclick="setTargetsRelative(2)">Actual +2</button>
+                <button class="btn ghost xs" onclick="setTargetsRelative(3)">Actual +3</button>
+            </div>
+        </div>
+
+        <div class="grid cols-2" id="targetsGrid"></div>
+      </section>
+    </div>
+
+    <!-- PASO 4: RESULTADO -->
+    <section class="card" style="text-align:center; margin-top:0">
+      <h2>Resultado Visual</h2>
       <canvas id="wheelCanvas"></canvas>
-      <div class="row" style="margin-top:10px">
-        <button class="btn" id="downloadBtn2">4) Descargar imagen (PNG)</button>
-        <span class="tiny">Sugerencia: usa tamaño "Grande" para exportar con mayor resolución.</span>
+      
+      <div class="row" style="justify-content:center; margin-top:20px; padding-top:15px; border-top:1px solid var(--line)">
+          <div style="display:flex; align-items:center; gap:10px">
+             <label class="tiny">Tamaño:</label>
+             <select id="sizeSelect" style="width:auto; padding:6px 10px">
+               <option value="0.9">Pequeño</option>
+               <option value="1.2" selected>Mediano</option>
+               <option value="1.6">Grande</option>
+             </select>
+          </div>
+          <button class="btn" id="downloadBtn">Descargar Imagen PNG</button>
+      </div>
+
+      <div style="margin-top:20px; text-align:left; background:#f9fafb; padding:15px; border-radius:10px; border:1px solid var(--line)">
+        <p class="tiny" style="font-size:14px; margin:0">
+            Esta reflexión te ayuda a entender cómo de equilibrado estás en tu vida. Si quieres profundizar más y entender cómo puedes ser una mejor versión de ti, como emprendedor, puedes agendar una llamada gratuita con Isma Teijón.
+        </p>
+        <a href="https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ2lldNJ3litzV_wVAwdtjm2YkTI9pmCG0kr-0XG6WjMkszlr_EZ2xzMkuVJfq1BywMpIo_XKmUb" target="_blank" style="display:inline-block; margin-top:8px; font-weight:bold; font-size:14px">
+            📅 Agendar Sesión Gratuita &rarr;
+        </a>
       </div>
     </section>
 
-    <footer class="tiny" style="text-align:center; margin:18px 0">Hecho con ❤️ — Punto de objetivo = ●</footer>
+    <footer class="tiny" style="text-align:center; margin:40px 0">
+        Hecho por <a href="https://www.instagram.com/ismateijon" target="_blank">@IsmaTeijon</a> con ♥️
+    </footer>
+  </div>
+
+  <!-- CHAT WIDGET -->
+  <div id="chat-toggle">🤖</div>
+  <div class="chat-window" id="chat-window">
+    <div class="chat-header">
+      <span>Coach IA (Gemini)</span>
+      <span style="cursor:pointer" id="chat-close">✕</span>
+    </div>
+    
+    <div class="chat-body" id="chat-body"></div>
+    
+    <div class="chat-input-area">
+      <div class="row" style="gap:5px; overflow-x:auto; flex-wrap:nowrap; padding-bottom:8px">
+          <button class="btn ghost xs suggestion-btn">Entender áreas</button>
+          <button class="btn ghost xs suggestion-btn">Analiza mi rueda</button>
+          <button class="btn ghost xs suggestion-btn">Plan de acción</button>
+      </div>
+      <div class="row" style="flex-wrap:nowrap; gap:8px">
+        <input type="text" id="chat-input" placeholder="Escribe aquí..." />
+        <button class="btn sm" id="chat-send">Enviar</button>
+      </div>
+    </div>
   </div>
 
   <script>
+    // ====== CONFIGURACIÓN Y CLAVES ======
+    const GEMINI_API_KEY = "AIzaSyCISohTeCIPGWS9guq6Yj3lmMiqkD0w-xo";
+    let GEMINI_MODEL = ""; // Se detectará automáticamente
+
     // ====== ESTADO ======
     const DEFAULTS = {
-      clasica:["Salud","Familia","Pareja","Amigos","Trabajo/Profesión","Finanzas","Crecimiento personal","Ocio/ diversión"],
-      emprendedor:["Salud/Energía","Relación de pareja","Familia/Amistades","Negocio/Ingresos","Marca personal","Aprendizaje/Skills","Propósito/Significado","Ocio/Recuperación"],
-      bienestar:["Salud física","Salud mental","Relaciones","Trabajo","Dinero","Hogar/Entorno","Hobbies","Espiritualidad"],
+      clasica:["Salud","Familia","Amor","Amigos","Trabajo","Dinero","Desarrollo","Ocio"],
+      emprendedor:["Energía","Pareja","Networking","Ventas","Marca Personal","Liderazgo","Misión","Descanso"],
+      bienestar:["Físico","Emocional","Social","Profesional","Financiero","Entorno","Creatividad","Espiritual"],
     };
-
     const COLORS = ["#FF6B6B","#FFA500","#FFD93D","#6BCB77","#00C2CB","#4D96FF","#A66DD4","#FF8E9E"];
-
     let areas = DEFAULTS.clasica.slice(0,8);
-    let scores = Array(8).fill(5);
-    let targets = Array(8).fill(7);
-    let horizon = "3";
-    let scale = 1.2; // Mediano por defecto
+    let scores = [5,5,5,5,5,5,5,5];
+    let targets = [7,7,7,7,7,7,7,7];
+    let horizon = "3 meses";
+    let scale = 1.2;
 
-    // ====== ELEMENTOS ======
+    // ====== DOM CACHE ======
     const areasGrid = document.getElementById('areasGrid');
     const scoresGrid = document.getElementById('scoresGrid');
     const targetsGrid = document.getElementById('targetsGrid');
     const canvas = document.getElementById('wheelCanvas');
     const sizeSelect = document.getElementById('sizeSelect');
-    const downloadBtn = document.getElementById('downloadBtn');
-    const downloadBtn2 = document.getElementById('downloadBtn2');
-
-    // ====== RENDER UI ======
-    function renderAreas(){
-      areasGrid.innerHTML = '';
-      for(let i=0;i<8;i++){
-        const wrap = document.createElement('div');
-        wrap.className = 'row';
-        const dot = document.createElement('span');
-        dot.className = 'dot';
-        dot.style.backgroundColor = COLORS[i%COLORS.length];
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.placeholder = `Área ${i+1}`;
-        input.value = areas[i] || '';
-        input.addEventListener('input', e=>{ areas[i] = e.target.value; draw(); });
-        wrap.append(dot,input);
-        areasGrid.appendChild(wrap);
-      }
+    
+    // ====== INIT ======
+    function init(){
+        createInputElements(); 
+        updateInputValues(); 
+        draw(); 
+        initChat();
     }
 
-    function renderScores(){
-      scoresGrid.innerHTML = '';
-      for(let i=0;i<8;i++){
-        const box = document.createElement('div');
-        const top = document.createElement('div'); top.className='row'; top.style.justifyContent='space-between';
-        const lab = document.createElement('span'); lab.textContent = areas[i] || `Área ${i+1}`;
-        const val = document.createElement('span'); val.className='num'; val.textContent = scores[i];
-        top.append(lab,val);
-        const range = document.createElement('input');
-        range.type='range'; range.min=0; range.max=10; range.step=1; range.value=scores[i];
-        range.addEventListener('input', e=>{ scores[i] = clamp(+e.target.value,0,10); val.textContent = scores[i]; draw(); });
-        box.append(top,range);
-        scoresGrid.appendChild(box);
-      }
+    // HTML Inputs
+    function createInputElements(){
+        areasGrid.innerHTML = ''; 
+        scoresGrid.innerHTML = ''; 
+        targetsGrid.innerHTML = '';
+
+        for(let i=0; i<8; i++){
+            // Area
+            const areaDiv = document.createElement('div');
+            areaDiv.innerHTML = `<input type="text" id="area_in_${i}" style="border-left:4px solid ${COLORS[i]}">`;
+            areasGrid.appendChild(areaDiv);
+            
+            document.getElementById(`area_in_${i}`).oninput = (e) => {
+                areas[i] = e.target.value; updateLabels(i); draw();
+            };
+
+            // Score Slider
+            const scoreDiv = document.createElement('div');
+            scoreDiv.className = 'slider-box';
+            scoreDiv.innerHTML = `
+                <div class="slider-header">
+                    <span id="score_lbl_${i}" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-right:5px">${areas[i]}</span>
+                    <span class="num" id="score_val_${i}">${scores[i]}</span>
+                </div>
+                <input type="range" min="0" max="10" value="${scores[i]}" id="score_in_${i}">
+            `;
+            scoresGrid.appendChild(scoreDiv);
+            document.getElementById(`score_in_${i}`).oninput = (e) => {
+                scores[i] = parseInt(e.target.value);
+                document.getElementById(`score_val_${i}`).innerText = scores[i];
+                draw();
+            };
+
+            // Target Slider
+            const targetDiv = document.createElement('div');
+            targetDiv.className = 'slider-box';
+            targetDiv.innerHTML = `
+                <div class="slider-header">
+                    <span id="target_lbl_${i}" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-right:5px">${areas[i]}</span>
+                    <span class="num" id="target_val_${i}">${targets[i]}</span>
+                </div>
+                <input type="range" min="0" max="10" value="${targets[i]}" id="target_in_${i}">
+            `;
+            targetsGrid.appendChild(targetDiv);
+            document.getElementById(`target_in_${i}`).oninput = (e) => {
+                targets[i] = parseInt(e.target.value);
+                document.getElementById(`target_val_${i}`).innerText = targets[i];
+                draw();
+            };
+        }
     }
 
-    function renderTargets(){
-      targetsGrid.innerHTML = '';
-      for(let i=0;i<8;i++){
-        const box = document.createElement('div');
-        const top = document.createElement('div'); top.className='row'; top.style.justifyContent='space-between';
-        const lab = document.createElement('span'); lab.textContent = areas[i] || `Área ${i+1}`;
-        const val = document.createElement('span'); val.className='num'; val.textContent = targets[i];
-        top.append(lab,val);
-        const range = document.createElement('input');
-        range.type='range'; range.min=0; range.max=10; range.step=1; range.value=targets[i];
-        range.addEventListener('input', e=>{ targets[i] = clamp(+e.target.value,0,10); val.textContent = targets[i]; draw(); });
-        box.append(top,range);
-        targetsGrid.appendChild(box);
-      }
+    function updateInputValues(){
+        for(let i=0; i<8; i++){
+            const areaIn = document.getElementById(`area_in_${i}`);
+            if(areaIn) areaIn.value = areas[i];
+            updateLabels(i);
+
+            const sIn = document.getElementById(`score_in_${i}`);
+            const sVal = document.getElementById(`score_val_${i}`);
+            if(sIn) sIn.value = scores[i];
+            if(sVal) sVal.innerText = scores[i];
+
+            const tIn = document.getElementById(`target_in_${i}`);
+            const tVal = document.getElementById(`target_val_${i}`);
+            if(tIn) tIn.value = targets[i];
+            if(tVal) tVal.innerText = targets[i];
+        }
     }
 
-    // ====== DIBUJO ======
-    function draw(){
-      const dpi = window.devicePixelRatio || 1;
-      const base = 680;
-      const w = base * scale * dpi;
-      const h = base * scale * dpi;
-      canvas.width = w; canvas.height = h;
-      canvas.style.width = (base * scale) + 'px';
-      canvas.style.height = (base * scale) + 'px';
-
-      const ctx = canvas.getContext('2d');
-      if(!ctx) return;
-      ctx.clearRect(0,0,w,h);
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0,0,w,h);
-
-      const outerMargin = 40 * dpi;
-      const cx = w/2;
-      const cy = h/2 + 10*dpi;
-      const radius = Math.min(w,h)/2 - outerMargin;
-      const levels = 10;
-      const angleStep = Math.PI*2/8;
-
-      // Título + fecha
-      ctx.fillStyle = '#111827';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'top';
-      ctx.font = `${16*dpi}px ui-sans-serif,system-ui`;
-      const fecha = new Date().toLocaleDateString();
-      ctx.fillText(`Mi Rueda de la Vida — ${fecha}`, w/2, 10*dpi);
-
-      ctx.save();
-      ctx.translate(cx,cy);
-
-      // anillos
-      ctx.strokeStyle = '#E5E7EB';
-      for(let l=1;l<=levels;l++){
-        ctx.beginPath();
-        ctx.arc(0,0,(radius*l)/levels,0,Math.PI*2);
-        ctx.stroke();
-      }
-      // divisiones
-      for(let i=0;i<8;i++){
-        const a0 = -Math.PI/2 + i*angleStep;
-        const x = Math.cos(a0)*radius; const y = Math.sin(a0)*radius;
-        ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(x,y); ctx.stroke();
-      }
-
-      // marcas 10 y 5
-      ctx.fillStyle = '#6B7280';
-      ctx.textAlign = 'right'; ctx.textBaseline='middle';
-      ctx.font = `${12*dpi}px ui-sans-serif,system-ui`;
-      ctx.fillText('10', -6*dpi, -(radius+12*dpi));
-      ctx.fillText('5', -6*dpi, -(radius/2+12*dpi));
-
-      // sectores
-      for(let i=0;i<8;i++){
-        const color = COLORS[i%COLORS.length];
-        const aStart = -Math.PI/2 + i*angleStep;
-        const aEnd = aStart + angleStep;
-        const rVal = (radius * clamp(scores[i],0,10)) / 10;
-
-        // fondo suave
-        ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0,0,radius,aStart,aEnd); ctx.closePath();
-        ctx.fillStyle = hexToRgba(color,0.12); ctx.fill();
-        // relleno valor
-        ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0,0,rVal,aStart,aEnd); ctx.closePath();
-        ctx.fillStyle = hexToRgba(color,0.55); ctx.fill();
-
-        // punto de objetivo
-        const mid = aStart + angleStep/2;
-        const rt = (radius * clamp(targets[i],0,10)) / 10;
-        const tx = Math.cos(mid)*rt; const ty = Math.sin(mid)*rt;
-        ctx.beginPath(); ctx.arc(tx,ty,4*dpi,0,Math.PI*2); ctx.fillStyle=color; ctx.fill();
-        ctx.beginPath(); ctx.arc(tx,ty,6*dpi,0,Math.PI*2); ctx.lineWidth=2*dpi; ctx.strokeStyle=color; ctx.stroke();
-      }
-
-      // etiquetas SIEMPRE horizontales
-      for(let i=0;i<8;i++){
-        const aStart = -Math.PI/2 + i*angleStep;
-        const mid = aStart + angleStep/2;
-        const labelR = radius + 20*dpi;
-        const lx = Math.cos(mid)*labelR; const ly = Math.sin(mid)*labelR;
-        const label = areas[i] || `Área ${i+1}`;
-        ctx.fillStyle='#111827'; ctx.font = `${14*dpi}px ui-sans-serif,system-ui`;
-        drawWrappedText(ctx,label,lx,ly,120*dpi,16*dpi);
-      }
-
-      // leyenda objetivo
-      ctx.textAlign='center'; ctx.textBaseline='alphabetic'; ctx.font = `${12*dpi}px ui-sans-serif,system-ui`; ctx.fillStyle='#374151';
-      ctx.fillText(`Objetivos a ${horizon} meses (●)`,0,radius+48*dpi);
-
-      ctx.restore();
+    function updateLabels(i){
+        const sLbl = document.getElementById(`score_lbl_${i}`);
+        const tLbl = document.getElementById(`target_lbl_${i}`);
+        if(sLbl) sLbl.innerText = areas[i];
+        if(tLbl) tLbl.innerText = areas[i];
     }
 
-    // ====== HELPERS ======
-    function clamp(n,min=0,max=10){ return Math.max(min, Math.min(max, Number.isFinite(n)?n:0)); }
-    function hexToRgba(hex,alpha=1){
-      const h = hex.replace('#','');
-      const v = parseInt(h.length===3 ? h.split('').map(c=>c+c).join('') : h,16);
-      const r=(v>>16)&255, g=(v>>8)&255, b=v&255; return `rgba(${r},${g},${b},${alpha})`;
-    }
-    function drawWrappedText(ctx,text,x,y,maxWidth,lineHeight){
-      ctx.save(); ctx.translate(x,y);
-      ctx.textAlign='center'; ctx.textBaseline='middle';
-      const words = String(text||'').split(/\s+/); let line=''; const lines=[];
-      for(let n=0;n<words.length;n++){
-        const test = line? line+' '+words[n] : words[n];
-        const w = ctx.measureText(test).width;
-        if(w>maxWidth && n>0){ lines.push(line); line = words[n]; } else { line = test; }
-      }
-      if(line) lines.push(line);
-      const totalH = lines.length*lineHeight; let yy = -totalH/2 + lineHeight/2;
-      for(const ln of lines){ ctx.fillText(ln,0,yy); yy+=lineHeight; }
-      ctx.restore();
-    }
-    function safeFileName(name){ return (name||'rueda').replace(/[^a-z0-9\-_.]+/gi,'_').slice(0,60); }
-    function downloadPNG(){
-      const dataUrl = canvas.toDataURL('image/png');
-      const a = document.createElement('a');
-      const fecha = new Date().toISOString().slice(0,10);
-      a.href = dataUrl; a.download = `${safeFileName('Rueda_de_la_Vida')}_${fecha}.png`;
-      document.body.appendChild(a); a.click(); a.remove();
+    // Funciones Globales
+    window.setAllScores = (v) => { scores = Array(8).fill(v); updateInputValues(); draw(); }
+    
+    window.setTargetsRelative = (inc) => {
+        targets = scores.map(s => Math.min(10, s + inc));
+        updateInputValues();
+        draw();
     }
 
-    // ====== EVENTOS ======
-    document.querySelectorAll('[data-preset]').forEach(btn=>{
-      btn.addEventListener('click',()=>{
-        const key = btn.getAttribute('data-preset');
-        const preset = DEFAULTS[key] || [];
-        areas = preset.slice(0,8);
-        while(areas.length<8) areas.push('');
-        renderAreas(); renderScores(); renderTargets(); draw();
-      })
+    document.querySelectorAll('[data-preset]').forEach(btn=>{ 
+        btn.addEventListener('click',()=>{ 
+            areas = DEFAULTS[btn.dataset.preset].slice(); updateInputValues(); draw(); 
+        }) 
     });
 
-    document.getElementById('all0').addEventListener('click',()=>{ scores = Array(8).fill(0); renderScores(); draw(); });
-    document.getElementById('all5').addEventListener('click',()=>{ scores = Array(8).fill(5); renderScores(); draw(); });
-    document.getElementById('all10').addEventListener('click',()=>{ scores = Array(8).fill(10); renderScores(); draw(); });
+    document.getElementById('horizon').addEventListener('change', e=>{ horizon=e.target.value; draw(); });
+    sizeSelect.addEventListener('change', e=>{ scale=parseFloat(e.target.value); draw(); });
+    
+    document.getElementById('downloadBtn').onclick = () => { 
+        const l = document.createElement('a'); 
+        l.download = `Rueda_Vida_${new Date().toISOString().slice(0,10)}.png`; 
+        l.href = canvas.toDataURL(); l.click(); 
+    };
 
-    document.getElementById('targets10').addEventListener('click',()=>{ targets = Array(8).fill(10); renderTargets(); draw(); });
-    document.getElementById('targets7').addEventListener('click',()=>{ targets = Array(8).fill(7); renderTargets(); draw(); });
+    // ====== CANVAS DRAW ======
+    function draw(){
+      const dpi = window.devicePixelRatio||1; const base=600; const w=base*scale*dpi; const h=base*scale*dpi;
+      canvas.width=w; canvas.height=h; canvas.style.width=(base*scale)+'px'; canvas.style.height=(base*scale)+'px';
+      const ctx=canvas.getContext('2d'); ctx.clearRect(0,0,w,h); ctx.fillStyle='#fff'; ctx.fillRect(0,0,w,h);
+      const cx=w/2, cy=h/2, rad=(Math.min(w,h)/2)-60*dpi, step=(Math.PI*2)/8;
+      
+      ctx.save(); ctx.translate(cx,cy); 
+      ctx.fillStyle='#111'; ctx.textAlign='center';
+      ctx.font=`bold ${18*dpi}px sans-serif`; ctx.fillText(`Rueda de la Vida (${horizon})`,0,-rad-35*dpi);
+      ctx.font=`${12*dpi}px sans-serif`; ctx.fillStyle='#666'; ctx.fillText(new Date().toLocaleDateString(), 0, -rad-18*dpi);
+      ctx.font=`italic ${12*dpi}px sans-serif`; ctx.fillStyle='#999'; ctx.fillText("@IsmaTeijon · Coach de Emprendedores ·", 0, rad+45*dpi);
 
-    sizeSelect.addEventListener('change', e=>{ scale = parseFloat(e.target.value)||1.2; draw(); });
-    document.getElementById('horizon').addEventListener('change', e=>{ horizon = e.target.value; draw(); });
+      for(let i=1;i<=10;i++){ ctx.beginPath(); ctx.arc(0,0,(rad/10)*i,0,Math.PI*2); ctx.strokeStyle=i===10?'#ccc':'#f3f3f3'; ctx.lineWidth=1*dpi; ctx.stroke(); }
 
-    downloadBtn.addEventListener('click', downloadPNG);
-    downloadBtn2.addEventListener('click', downloadPNG);
+      for(let i=0;i<8;i++){
+          const r=-Math.PI/2+(i*step), sr=(scores[i]/10)*rad;
+          ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0,0,sr,r,r+step); ctx.closePath(); 
+          ctx.fillStyle=hexToRgba(COLORS[i],0.6); ctx.fill();
+          ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(Math.cos(r)*rad,Math.sin(r)*rad); ctx.strokeStyle='#ddd'; ctx.stroke();
+          const tr=(targets[i]/10)*rad, mid=r+step/2, tx=Math.cos(mid)*tr, ty=Math.sin(mid)*tr;
+          ctx.beginPath(); ctx.arc(tx,ty,5*dpi,0,Math.PI*2); ctx.fillStyle=COLORS[i]; ctx.fill(); ctx.strokeStyle='#fff'; ctx.lineWidth=2*dpi; ctx.stroke();
+          const lx=Math.cos(mid)*(rad+25*dpi), ly=Math.sin(mid)*(rad+25*dpi); 
+          ctx.fillStyle='#222'; ctx.font=`bold ${11*dpi}px sans-serif`; ctx.fillText(areas[i].substr(0,15),lx,ly);
+      }
+      ctx.restore();
+    }
+    function hexToRgba(hex,a){ let c=hex.substring(1).split(''); if(c.length==3)c=[c[0],c[0],c[1],c[1],c[2],c[2]]; c='0x'+c.join(''); return `rgba(${(c>>16)&255},${(c>>8)&255},${c&255},${a})`; }
 
-    // ====== INIT ======
-    renderAreas(); renderScores(); renderTargets(); draw();
+    // ====== CHAT ======
+    const chatBody = document.getElementById('chat-body');
+    const chatInput = document.getElementById('chat-input');
+    const chatSend = document.getElementById('chat-send');
+
+    function initChat(){
+        addBotMsg("¡Hola! Soy tu Coach IA. Pregúntame dudas o pide un análisis de tu rueda.");
+    }
+
+    const chatToggle = document.getElementById('chat-toggle'); const chatWin = document.getElementById('chat-window');
+    chatToggle.onclick = () => { chatWin.classList.add('open'); chatToggle.style.transform='scale(0)'; };
+    document.getElementById('chat-close').onclick = () => { chatWin.classList.remove('open'); chatToggle.style.transform='scale(1)'; };
+
+    // === AUTODETECCIÓN SILENCIOSA ===
+    async function resolveModel() {
+        if(GEMINI_MODEL) return GEMINI_MODEL; // Ya tenemos uno
+        try {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_API_KEY}`);
+            const data = await res.json();
+            
+            if(data.models) {
+                // Filtramos modelos de chat
+                const viable = data.models.filter(m => m.supportedGenerationMethods && m.supportedGenerationMethods.includes("generateContent"));
+                const names = viable.map(m => m.name.replace("models/", ""));
+                
+                // Prioridad: Flash > Pro > Otros
+                const flash = names.find(n => n.includes("flash") && !n.includes("8b"));
+                const pro = names.find(n => n.includes("pro") && !n.includes("exp"));
+                
+                GEMINI_MODEL = flash || pro || names[0] || "gemini-1.5-flash";
+                console.log("Modelo detectado:", GEMINI_MODEL);
+            } else {
+                GEMINI_MODEL = "gemini-1.5-flash"; // Fallback
+            }
+        } catch (e) {
+            GEMINI_MODEL = "gemini-1.5-flash";
+        }
+        return GEMINI_MODEL;
+    }
+
+    async function handleSend(text = null){
+        const msg = text || chatInput.value.trim(); if(!msg) return;
+        addUserMsg(msg); chatInput.value = '';
+        const loadingId = addLoading();
+        
+        // Asegurar modelo antes de llamar
+        const modelName = await resolveModel();
+
+        try {
+            const response = await callGeminiAPI(modelName, msg);
+            removeLoading(loadingId); 
+            addBotMsg(response);
+        } catch (e) {
+            removeLoading(loadingId); 
+            let niceError = e.message;
+            if(niceError.includes("429")) niceError = "Demasiadas peticiones. Espera un minuto.";
+            addErrMsg(`Error de conexión: ${niceError}`);
+        }
+    }
+
+    chatSend.onclick = () => handleSend();
+    chatInput.addEventListener('keypress', (e)=>{ if(e.key==='Enter') handleSend() });
+    document.querySelectorAll('.suggestion-btn').forEach(btn => { btn.onclick = () => handleSend(btn.innerText); });
+
+    async function callGeminiAPI(modelName, userPrompt) {
+        let ctx = "DATOS USUARIO:\n"; areas.forEach((a, i) => ctx += `- ${a}: Actual ${scores[i]}/10, Objetivo ${targets[i]}/10\n`);
+        const sys = `Eres un Coach experto. Analiza la Rueda de la Vida.
+            REGLAS: 1. Si preguntan "Qué es X", solo define X, no analices. 2. Si piden análisis, hazlo breve. 3. SIEMPRE ofrece agendar aquí: https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ2lldNJ3litzV_wVAwdtjm2YkTI9pmCG0kr-0XG6WjMkszlr_EZ2xzMkuVJfq1BywMpIo_XKmUb
+            ${ctx}`;
+        
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${GEMINI_API_KEY}`;
+        
+        const res = await fetch(url, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents: [{ parts: [{ text: sys + "\nUsuario: " + userPrompt }] }] })
+        });
+        
+        const data = await res.json(); 
+        if(data.error) throw new Error(data.error.message);
+        
+        let html = data.candidates[0].content.parts[0].text
+            .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+            .replace(/^\* (.*$)/gm,'• $1<br>')
+            .replace(/\n/g,'<br>');
+        return html.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" style="color:#4f46e5; text-decoration:underline">Reserva aquí</a>');
+    }
+
+    function addUserMsg(t){ const d=document.createElement('div');d.className='chat-msg user';d.textContent=t;chatBody.appendChild(d);scrollToBottom();}
+    function addBotMsg(h){ const d=document.createElement('div');d.className='chat-msg bot';d.innerHTML=h;chatBody.appendChild(d);scrollToBottom();}
+    function addErrMsg(t){ const d=document.createElement('div');d.className='chat-msg err';d.innerHTML=t;chatBody.appendChild(d);scrollToBottom();}
+    function addLoading(){ const i='l-'+Date.now(),d=document.createElement('div');d.id=i;d.className='typing';d.innerHTML='<span></span><span></span><span></span>';chatBody.appendChild(d);scrollToBottom();return i;}
+    function removeLoading(i){document.getElementById(i)?.remove();}
+    function scrollToBottom(){chatBody.scrollTop=chatBody.scrollHeight;}
+
+    init();
   </script>
 </body>
 </html>
