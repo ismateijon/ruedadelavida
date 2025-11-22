@@ -7,6 +7,9 @@
   <!-- FAVICON -->
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
 
+  <!-- CARGAMOS LA CLAVE DESDE EL ARCHIVO EXTERNO -->
+  <script src="config.js"></script>
+
   <style>
     :root{
       --bg:#f7f7fb; --card:#ffffff; --ink:#111827; --muted:#6b7280; --line:#e5e7eb; --brand:#4f46e5; --brand-dark:#3730a3;
@@ -46,7 +49,6 @@
     
     canvas{max-width:100%; height:auto; border:1px solid var(--line); border-radius:12px; margin:0 auto; display:block}
 
-    /* Align Helper */
     .spacer-block { height: 42px; display: flex; align-items: center; } 
 
     /* --- CHAT UI --- */
@@ -232,9 +234,10 @@
   </div>
 
   <script>
-    // ====== CONFIGURACIÓN Y CLAVES ======
-    const GEMINI_API_KEY = "AIzaSyCISohTeCIPGWS9guq6Yj3lmMiqkD0w-xo";
-    let GEMINI_MODEL = ""; // Se detectará automáticamente
+    // ====== GESTIÓN DE CLAVES ======
+    let GEMINI_API_KEY = ""; 
+    let GEMINI_MODEL = ""; // Autodetectado
+    let SYSTEM_INSTRUCTIONS = "Eres un coach experto."; // Default fallback
 
     // ====== ESTADO ======
     const DEFAULTS = {
@@ -258,6 +261,22 @@
     
     // ====== INIT ======
     function init(){
+        // 1. Cargar Key desde config.js
+        if (typeof APP_CONFIG !== 'undefined' && APP_CONFIG.API_KEY) {
+            GEMINI_API_KEY = APP_CONFIG.API_KEY;
+        } else {
+            console.warn("Falta el archivo config.js o la API_KEY");
+        }
+
+        // 2. Cargar Instrucciones desde instructions.txt (con timestamp para evitar caché)
+        fetch('instructions.txt?v=' + Date.now())
+            .then(r => r.text())
+            .then(text => {
+                if(text.length > 10) SYSTEM_INSTRUCTIONS = text;
+                console.log("Instrucciones cargadas.");
+            })
+            .catch(e => console.warn("No se encontró instructions.txt, usando default."));
+
         createInputElements(); 
         updateInputValues(); 
         draw(); 
@@ -400,33 +419,34 @@
     const chatSend = document.getElementById('chat-send');
 
     function initChat(){
-        addBotMsg("¡Hola! Soy tu Coach IA. Pregúntame dudas o pide un análisis de tu rueda.");
+        if(GEMINI_API_KEY){
+            addBotMsg("¡Hola! Soy tu Coach IA. Pregúntame dudas o pide un análisis de tu rueda.");
+        } else {
+            addErrMsg("Error: No se pudo cargar la clave API. Asegúrate de que el archivo 'config.js' existe.");
+        }
     }
 
     const chatToggle = document.getElementById('chat-toggle'); const chatWin = document.getElementById('chat-window');
     chatToggle.onclick = () => { chatWin.classList.add('open'); chatToggle.style.transform='scale(0)'; };
     document.getElementById('chat-close').onclick = () => { chatWin.classList.remove('open'); chatToggle.style.transform='scale(1)'; };
 
-    // === AUTODETECCIÓN SILENCIOSA ===
+    // === AUTODETECCIÓN DE MODELO ===
     async function resolveModel() {
-        if(GEMINI_MODEL) return GEMINI_MODEL; // Ya tenemos uno
+        if(GEMINI_MODEL) return GEMINI_MODEL;
         try {
             const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_API_KEY}`);
             const data = await res.json();
             
             if(data.models) {
-                // Filtramos modelos de chat
                 const viable = data.models.filter(m => m.supportedGenerationMethods && m.supportedGenerationMethods.includes("generateContent"));
                 const names = viable.map(m => m.name.replace("models/", ""));
                 
-                // Prioridad: Flash > Pro > Otros
                 const flash = names.find(n => n.includes("flash") && !n.includes("8b"));
                 const pro = names.find(n => n.includes("pro") && !n.includes("exp"));
                 
                 GEMINI_MODEL = flash || pro || names[0] || "gemini-1.5-flash";
-                console.log("Modelo detectado:", GEMINI_MODEL);
             } else {
-                GEMINI_MODEL = "gemini-1.5-flash"; // Fallback
+                GEMINI_MODEL = "gemini-1.5-flash";
             }
         } catch (e) {
             GEMINI_MODEL = "gemini-1.5-flash";
@@ -437,9 +457,13 @@
     async function handleSend(text = null){
         const msg = text || chatInput.value.trim(); if(!msg) return;
         addUserMsg(msg); chatInput.value = '';
-        const loadingId = addLoading();
         
-        // Asegurar modelo antes de llamar
+        if(!GEMINI_API_KEY) {
+            addErrMsg("Falta la API Key. Revisa config.js");
+            return;
+        }
+
+        const loadingId = addLoading();
         const modelName = await resolveModel();
 
         try {
@@ -459,16 +483,17 @@
     document.querySelectorAll('.suggestion-btn').forEach(btn => { btn.onclick = () => handleSend(btn.innerText); });
 
     async function callGeminiAPI(modelName, userPrompt) {
-        let ctx = "DATOS USUARIO:\n"; areas.forEach((a, i) => ctx += `- ${a}: Actual ${scores[i]}/10, Objetivo ${targets[i]}/10\n`);
-        const sys = `Eres un Coach experto. Analiza la Rueda de la Vida.
-            REGLAS: 1. Si preguntan "Qué es X", solo define X, no analices. 2. Si piden análisis, hazlo breve. 3. SIEMPRE ofrece agendar aquí: https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ2lldNJ3litzV_wVAwdtjm2YkTI9pmCG0kr-0XG6WjMkszlr_EZ2xzMkuVJfq1BywMpIo_XKmUb
-            ${ctx}`;
+        let ctx = "DATOS ACTUALES DE LA RUEDA:\n"; 
+        areas.forEach((a, i) => ctx += `- ${a}: Estado ${scores[i]}/10, Objetivo ${targets[i]}/10\n`);
+        
+        // Combinar Instrucciones externas + Contexto + Pregunta
+        const finalPrompt = `${SYSTEM_INSTRUCTIONS}\n\n${ctx}\n\nUsuario dice: ${userPrompt}`;
         
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${GEMINI_API_KEY}`;
         
         const res = await fetch(url, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: [{ parts: [{ text: sys + "\nUsuario: " + userPrompt }] }] })
+            body: JSON.stringify({ contents: [{ parts: [{ text: finalPrompt }] }] })
         });
         
         const data = await res.json(); 
